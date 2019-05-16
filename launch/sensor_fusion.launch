@@ -1,0 +1,97 @@
+<launch>
+	<!-- PARAMATERS -->
+
+	<!-- Global namespaces and frames -->
+	<arg name="right_ns" default="camera/right" doc="Right camera ROS namespace"/>
+	<arg name="left_ns" default="camera/left" doc="Left camera ROS namespace"/>
+	<arg name="stereoFrame" default="head_stereo/left_optical_frame" doc="Stereo camera frame"/>
+	<arg name="SLFrame" default="/seikowave/optical_frame" doc="SL camera frame" />
+	<arg name="extrinsicNS" default="SL_extrinsics" doc="Namespace for stereo-SL extrinsics"/>
+
+	<!-- Pointcloud topic names -->
+	<arg name="stereoPointcloud" default="/camera/points2" doc="Topic for stereo camera pointcloud streams"/>
+  <arg name="SLPointcloud" default="/seikowave_node/cloud" doc="Topic for SL pointcloud streams"/>
+
+	<!--Image topic names -->
+	<arg name="cropImageIn" default="image_raw" doc="Topic for raw image streams"/>
+	<arg name="cropInfoIn" default="camera_info" doc="Topic for raw camera info"/>
+
+	<!-- Calibration files -->
+	<arg name="seikowaveExtrinsics" default="$(find sensor_fusion)/cfg/extrinsics/stereo_Seikowave_extrinsics.yaml" />
+
+	<!-- Load ROS param calibration files -->
+	<rosparam command="load" file="$(arg seikowaveExtrinsics)" ns="$(arg extrinsicNS)"/>
+
+	<!-- START NODES -->
+
+	<!-- Start crop decimation for the left image -->
+	<group ns="$(arg left_ns)" >
+		<node pkg="nodelet" type="nodelet" args="standalone image_proc/crop_decimate" name="crop_decimate">
+				<param name="x_offset" type="int" value="0" />
+				<param name="y_offset" type="int" value="0" />
+
+				<param name="decimation_x" type="int" value="4" />
+				<param name="decimation_y" type="int" value="4" />
+				<param name="width" type="int" value="2048" />
+				<param name="height" type="int" value="1536" />
+
+				<remap from="camera/image_raw" to="$(arg cropImageIn)"/>
+				<remap from="camera/image_info" to="$(arg cropInfoIn)"/>
+
+				<remap from="camera_out/image_raw" to="camera_crop/image_crop"/>
+				<remap from="camera_out/image_info" to="camera_crop/camera_info"/>
+		</node>
+	</group>
+
+  <!-- Start crop decimation for the right image -->
+	<group ns="$(arg right_ns)" >
+		<node pkg="nodelet" type="nodelet" args="standalone image_proc/crop_decimate" name="crop_decimate">
+				<param name="x_offset" type="int" value="0" />
+				<param name="y_offset" type="int" value="0" />
+
+				<param name="decimation_x" type="int" value="4" />
+				<param name="decimation_y" type="int" value="4" />
+				<param name="width" type="int" value="2048" />
+				<param name="height" type="int" value="1536" />
+
+				<remap from="camera/image_raw" to="$(arg cropImageIn)"/>
+				<remap from="camera/image_info" to="$(arg cropInfoIn)"/>
+
+				<remap from="camera_out/image_raw" to="camera_crop/image_crop"/>
+				<remap from="camera_out/image_info" to="camera_crop/camera_info"/>
+		</node>
+	</group>
+
+	<!-- Run disparity downsample node -->
+	<group ns="camera">
+		<!-- Run stereo image proc node -->
+		<node pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc">
+			<remap from="left/image_raw" to="left/camera_crop/image_crop" />
+			<remap from="right/image_raw" to="right/camera_crop/image_crop" />
+			<remap from="left/camera_info" to="left/camera_crop/camera_info" />
+			<remap from="right/camera_info" to="right/camera_crop/camera_info" />
+
+			<!-- Tuned underwater calibration params-->
+			<param name="approximate_sync" type="bool" value="true" />
+			<param name="prefilter_size" type="int" value="107" />
+			<param name="prefilter_cap" type="int" value="63" />
+			<param name="correlation_window_size" type="int" value="13" />
+			<param name="min_disparity" type="int" value="-1" />
+			<param name="disparity_range" type="int" value="80" />
+			<param name="uniqueness_ratio" type="double" value="10.0" />
+			<param name="texture_threshold" type="int" value="696" />
+			<param name="speckle_size" type="int" value="174" />
+			<param name="speckle_range" type="int" value="31" />
+		</node>
+	</group>
+
+	<!-- Run pointcloud fusion-->
+	<node name="pointcloud_fusion" pkg="sensor_fusion" type="pointcloud_fusion" output="screen" >
+		<remap from="stereo/points2" to="$(arg stereoPointcloud)" />
+		<remap from="SL/points2" to="$(arg SLPointcloud)" />
+		<param name="stereo_frame" type="string" value="$(arg stereoFrame)" />
+		<param name="SL_frame" type="string" value="$(arg SLFrame)" />
+		<param name="extrinsics_ns" type="string" value="$(arg extrinsicNS)" />
+	</node>
+
+</launch>
