@@ -1,10 +1,11 @@
-# Sensor Fusion
+# Pointcloud-Fusion
 
 This repo contains a simple ROS node and corresponding launch file to produce stereo pointclouds, and transform those pointclouds into the frame of an SL sensor.   
 
 ## Launch file: sensor_fusion.launch 
 This launch file crops input images by four (to help with processing speed), feeds the cropped images into the standard ROS node stereo_image_proc to produce stereo pointclouds, while also running the node pointcloud_fusion, which publishes the static extrinsic tf transform between the SL sensor frame and the stereo frame and transforms the stereo pointcloud into the SL sensor's frame.
 
+Seikowave extrinsics are located at cfg/extrinsics/stereo_Seikowave_extrinsics.yaml
 ### Nodes:
 * camera/stereo_image_proc  
 	Camera stereo processing
