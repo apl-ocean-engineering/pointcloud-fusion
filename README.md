@@ -3,9 +3,19 @@
 This repo contains a simple ROS node and corresponding launch file to produce stereo pointclouds, and transform those pointclouds into the frame of an SL sensor.   
 
 ## Launch file: sensor_fusion.launch 
-This launch file crops input images by four (to help with processing speed), feeds the cropped images into the standard ROS node stereo_image_proc to produce stereo pointclouds, while also running the node pointcloud_fusion, which publishes the static extrinsic tf transform between the SL sensor frame and the stereo frame and transforms the stereo pointcloud into the SL sensor's frame.  
+This launch file crops input images by four (to help with processing speed), feeds the cropped images into the standard ROS node stereo_image_proc to produce stereo pointclouds, while also running the node pointcloud_fusion, which publishes the static extrinsic tf transform between the SL sensor frame and the stereo frame and transforms the stereo pointcloud into the SL sensor's frame.
 
-The launch file has been configured to work with pointgrey cameras and a seikowave SL sensor. As such, the launch file as currently configured, have the following input output structure:
+### Nodes:
+* camera/stereo_image_proc  
+	Camera stereo processing
+* pointcloud_fusions  
+	Publish extrinsic /tf information, transform stereo pointcloud to SL frame  
+* camera/left/crop_decimate  
+	Left image image crop
+* camera/right/crop_decimate  
+	Right image image crop
+
+The launch file has been configured to work with pointgrey cameras and a seikowave SL sensor. As such, the launch file as currently configured, have the following input output structure:  
 
 ### Topic Inputs
 * /camera/left/image_raw (sensor_msgs/Image)  
@@ -30,4 +40,5 @@ The launch file has been configured to work with pointgrey cameras and a seikowa
 	Publishes the transform between the stereo pointcloud frame (default: head_stereo/left_optical_frame) and seikowave pointcloud frame (default: seikowave/optical_frame)
 
 
-
+## Install
+To install, clone to a catkin_ws and compile using either catkin build or catkin_make
