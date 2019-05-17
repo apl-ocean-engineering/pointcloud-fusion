@@ -114,7 +114,7 @@ void PointcloudFusion::tf_pub() {
     transform.setRotation(q);
 
     // Publish tf transform
-    TB.sendTransform(tf::StampedTransform(transform, ros::Time::now(),
+    TB.sendTransform(tf::StampedTransform(transform.inverse(), ros::Time::now(),
                                           stereoFrameID, SLFrameID));
 
     // Get ROS info from callbacks
