@@ -23,8 +23,11 @@
 
 #include <tf/transform_broadcaster.h>
 
-typedef pcl::PointXYZ PointT;
+typedef pcl::PointXYZRGB PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
+
+typedef pcl::PointXYZ PointXYZ;
+typedef pcl::PointCloud<PointXYZ> PointCloudPointXYZ;
 
 typedef message_filters::sync_policies::ApproximateTime<
     sensor_msgs::PointCloud2, sensor_msgs::PointCloud2>
@@ -33,7 +36,7 @@ typedef message_filters::sync_policies::ApproximateTime<
 class PointcloudFusion {
   // Inital pointcloud pointers
   PointCloudT::Ptr stereoCloud;
-  PointCloudT::Ptr SLCloud;
+  PointCloudPointXYZ::Ptr SLCloud;
   PointCloudT::Ptr cloudTransform;
 
   // Sensor frame names

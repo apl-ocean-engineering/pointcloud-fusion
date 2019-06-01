@@ -6,7 +6,7 @@ Main fusion ROS node
 PointcloudFusion::PointcloudFusion(Eigen::Matrix4f _G,
                                    std::string _stereoFrameID,
                                    std::string _SLFrameID)
-    : stereoCloud(new PointCloudT), SLCloud(new PointCloudT),
+    : stereoCloud(new PointCloudT), SLCloud(new PointCloudPointXYZ),
       cloudTransform(new PointCloudT), G(_G), stereoFrameID(_stereoFrameID),
       SLFrameID(_SLFrameID) {}
 
