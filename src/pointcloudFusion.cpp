@@ -152,7 +152,7 @@ int main(int argc, char **argv) {
     ROS_INFO("Will republish input pointcloud topic");
   } else {
     ROS_INFO("Will not re-publish pointclouds");
-    republish_pointclouds = false;
+    republish_pointclouds = true;
   }
 
   //Determine if we want to publish in live time or a camera pointcliud time
@@ -168,7 +168,7 @@ int main(int argc, char **argv) {
     }
   } else {
     ROS_INFO("Will publish tf at camera pointcloud time");
-    live_tf = false;
+    live_tf = true;
   }
 
   // Create pointcloud fusion object
