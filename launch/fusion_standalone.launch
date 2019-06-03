@@ -1,0 +1,45 @@
+<launch>
+	<!-- PARAMATERS -->
+	<!-- Image paramaters -->
+	<arg name="ImageWidth" default="2048" doc="Input image width"/>
+	<arg name="ImageHeight" default="1536" doc="Input image height"/>
+
+  <arg name="republishPC" default="true" doc="Wether or not to re-publish incoming pointcloud data"/>
+
+  <arg name="liveTF" default="true" doc="Wether or not to publish tf data at clock time"/>
+
+
+	<!-- Global namespaces and frames -->
+	<arg name="leftNs" default="camera/left" doc="Left camera ROS namespace"/>
+	<arg name="rightNs" default="camera/right" doc="Right camera ROS namespace"/>
+	<arg name="stereoFrame" default="head_stereo/left_optical_frame" doc="Stereo camera frame"/>
+	<arg name="SLFrame" default="/seikowave/optical_frame" doc="SL camera frame" />
+	<arg name="extrinsicNS" default="SL_extrinsics" doc="Namespace for stereo-SL extrinsics"/>
+
+	<!--Image topic names -->
+	<arg name="cropImageIn" default="image_raw" doc="Topic for raw image streams"/>
+	<arg name="cropInfoIn" default="camera_info" doc="Topic for raw camera info"/>
+	<arg name="cropImageOut" default="camera_crop/image_crop" doc="Cropped image topic" />
+	<arg name="cropInfoOut" default="camera_crop/camera_info" doc="Cropped info topic" />
+
+	<!-- Cropped properties -->
+	<arg name="cropDecimation" default="4" doc="Image crop decimation scale"/>
+
+	<!-- Calibration files -->
+	<arg name="seikowaveExtrinsics" default="$(find sensor_fusion)/cfg/extrinsics/stereo_Seikowave_extrinsics.yaml" />
+
+	<!-- Load ROS param calibration files -->
+	<rosparam command="load" file="$(arg seikowaveExtrinsics)" ns="$(arg extrinsicNS)"/>
+
+	<!-- Run pointcloud fusion-->
+	<node name="pointcloud_fusion" pkg="sensor_fusion" type="pointcloud_fusion" output="screen" >
+		<remap from="stereo/points2" to="/camera/points2" />
+		<remap from="SL/points2" to="/seikowave_node/cloud" />
+		<param name="stereo_frame" type="string" value="$(arg stereoFrame)" />
+		<param name="SL_frame" type="string" value="$(arg SLFrame)" />
+		<param name="extrinsics_ns" type="string" value="$(arg extrinsicNS)" />
+    <param name="republish_pointclouds" type="bool" value="$(arg republishPC)" />
+    <param name="live_tf" type="bool" value="$(arg liveTF)" />
+	</node>
+
+</launch>

@@ -49,6 +49,11 @@ class PointcloudFusion {
   // ROS node handeler
   ros::NodeHandle nh_;
 
+  //Live fusion param helpers
+  ros::Time cameraPCTime;
+  bool liveTF;
+  bool republishPC;
+
   // ROS publishers and transform broadcaster
   std::string steroTopic = "fusion/stereo/cloud";
   ros::Publisher stereoPub = nh_.advertise<PointCloudT>(steroTopic, 1);
@@ -59,7 +64,7 @@ class PointcloudFusion {
 public:
   // Constructor/destructor
   PointcloudFusion(Eigen::Matrix4f _G, std::string _stereoFrameID,
-                   std::string _SLFrameID);
+                   std::string _SLFrameID, bool live_time_TF, bool republish_pointclouds);
   ~PointcloudFusion();
   // Pointcliud callback
   void pointcloudSyncCallback(const sensor_msgs::PointCloud2ConstPtr &stereo_PC,

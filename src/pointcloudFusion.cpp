@@ -2,13 +2,16 @@
 Main fusion ROS node
 */
 #include "pointcloudFusion.h"
+#include <pcl/common/centroid.h>
 
 PointcloudFusion::PointcloudFusion(Eigen::Matrix4f _G,
                                    std::string _stereoFrameID,
-                                   std::string _SLFrameID)
+                                   std::string _SLFrameID, bool live_time_TF, bool republish_pointclouds)
     : stereoCloud(new PointCloudT), SLCloud(new PointCloudPointXYZ),
       cloudTransform(new PointCloudT), G(_G), stereoFrameID(_stereoFrameID),
-      SLFrameID(_SLFrameID) {}
+      SLFrameID(_SLFrameID), liveTF(live_time_TF), republishPC(republish_pointclouds) {
+        cameraPCTime = ros::Time::now();
+      }
 
 PointcloudFusion::~PointcloudFusion() {}
 
@@ -16,22 +19,33 @@ void PointcloudFusion::pointcloudSyncCallback(
     const sensor_msgs::PointCloud2ConstPtr &stereo_PC,
     const sensor_msgs::PointCloud2ConstPtr &sl_PC) {
 
-  // Transform to PCL cloud type
-  pcl::fromROSMsg(*stereo_PC, *stereoCloud);
-  pcl::fromROSMsg(*sl_PC, *SLCloud);
+  cameraPCTime = stereo_PC->header.stamp;
+  if (republishPC){
+    // Transform to PCL cloud type
+    pcl::fromROSMsg(*stereo_PC, *stereoCloud);
+    pcl::fromROSMsg(*sl_PC, *SLCloud);
 
-  // Transform stereo cloud to seikowave frame
-  pcl::transformPointCloud(*stereoCloud, *cloudTransform, G);
+    // pcl::CentroidPoint<PointXYZ> centroid;
+    // pcl::computeCentroid(*SLCloud, centroid);
+    // PointXYZ point;
+    // centroid.get(point);
+    //
+    // ROS_INFO("SL pointcloud centroid: %f, %f, %f", point.x, point.y, point.z);
 
-  // Publish stereo cloud
-  cloudTransform->header.frame_id = SLFrameID;
-  pcl_conversions::toPCL(ros::Time::now(), cloudTransform->header.stamp);
-  stereoPub.publish(*cloudTransform);
 
-  // Publish SL cloud
-  SLCloud->header.frame_id = SLFrameID;
-  pcl_conversions::toPCL(ros::Time::now(), SLCloud->header.stamp);
-  SLPub.publish(*SLCloud);
+    // Transform stereo cloud to seikowave frame
+    pcl::transformPointCloud(*stereoCloud, *cloudTransform, G);
+
+    // Publish stereo cloud
+    cloudTransform->header.frame_id = SLFrameID;
+    pcl_conversions::toPCL(ros::Time::now(), cloudTransform->header.stamp);
+    stereoPub.publish(*cloudTransform);
+
+    // Publish SL cloud
+    SLCloud->header.frame_id = SLFrameID;
+    pcl_conversions::toPCL(ros::Time::now(), SLCloud->header.stamp);
+    SLPub.publish(*SLCloud);
+  }
 }
 
 void PointcloudFusion::tf_pub() {
@@ -46,8 +60,14 @@ void PointcloudFusion::tf_pub() {
     transform.setRotation(q);
 
     // Publish tf transform
-    TB.sendTransform(tf::StampedTransform(transform.inverse(), ros::Time::now(),
+    if (liveTF){
+      TB.sendTransform(tf::StampedTransform(transform.inverse(), ros::Time::now(),
                                           stereoFrameID, SLFrameID));
+    }
+    else{
+      TB.sendTransform(tf::StampedTransform(transform.inverse(), cameraPCTime,
+                                          stereoFrameID, SLFrameID));
+    }
 
     // Get ROS info from callbacks
     ros::spinOnce();
@@ -126,9 +146,33 @@ int main(int argc, char **argv) {
     SL_frame = "SL/optical_frame";
   }
 
-  // Create pointcloud fusion object
-  PointcloudFusion pointcloudFusion(G, stereo_frame, SL_frame);
+  bool republish_pointclouds;
+  // Decide if to re-publish pointcloud data or not
+  if (nh_.getParam("republish_pointclouds", republish_pointclouds)) {
+    ROS_INFO("Will republish input pointcloud topic");
+  } else {
+    ROS_INFO("Will not re-publish pointclouds");
+    republish_pointclouds = false;
+  }
 
+  //Determine if we want to publish in live time or a camera pointcliud time
+  // (publishing at live time seemed to fail with rosbag -> live data fusions)
+
+  bool live_tf;
+  if (nh_.getParam("live_tf", live_tf)) {
+    if (live_tf){
+      ROS_INFO("Will publish tf at clock time");
+    }
+    else{
+      ROS_INFO("Will publish tf at camera pointcloud time");
+    }
+  } else {
+    ROS_INFO("Will publish tf at camera pointcloud time");
+    live_tf = false;
+  }
+
+  // Create pointcloud fusion object
+  PointcloudFusion pointcloudFusion(G, stereo_frame, SL_frame, live_tf, republish_pointclouds);
   // Approx sync incoming pointcloud topics
   message_filters::Subscriber<sensor_msgs::PointCloud2> stereo_sub(
       nh_, stereo_topic, 1);
@@ -138,6 +182,7 @@ int main(int argc, char **argv) {
                                                  SL_sub);
   sync.registerCallback(boost::bind(&PointcloudFusion::pointcloudSyncCallback,
                                     &pointcloudFusion, _1, _2));
+
 
   // Main ROS loop. Publish tf
   pointcloudFusion.tf_pub();
