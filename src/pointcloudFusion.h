@@ -12,6 +12,7 @@
 #include <iostream>
 #include <string>
 
+#include <pcl/filters/voxel_grid.h>
 #include <pcl/common/common_headers.h>
 #include <pcl/common/transforms.h>
 #include <pcl_ros/point_cloud.h>
@@ -49,16 +50,13 @@ class PointcloudFusion {
   // ROS node handeler
   ros::NodeHandle nh_;
 
-  //Live fusion param helpers
-  ros::Time cameraPCTime;
-  bool liveTF;
-  bool republishPC;
-
   // ROS publishers and transform broadcaster
   std::string steroTopic = "fusion/stereo/cloud";
   ros::Publisher stereoPub = nh_.advertise<PointCloudT>(steroTopic, 1);
   std::string SLTopic = "fusion/SL/cloud";
   ros::Publisher SLPub = nh_.advertise<PointCloudT>(SLTopic, 1);
+  std::string concatenateTopic = "fusion/concatenated_cloud";
+  ros::Publisher concatenatePub = nh_.advertise<PointCloudT>(concatenateTopic, 1);
   tf::TransformBroadcaster TB;
 
 public:
@@ -71,4 +69,17 @@ public:
                               const sensor_msgs::PointCloud2ConstPtr &sl_PC);
   // Main tf publisher
   void tf_pub();
+
+
+  //Live fusion param helpers
+  ros::Time cameraPCTime;
+  bool liveTF;
+  bool republishPC;
+
+  //Downsample params
+  bool downsamplePC;
+  int pointKeepNum;
+
+  //Concatenate params
+  bool concatenateOutput;
 };
