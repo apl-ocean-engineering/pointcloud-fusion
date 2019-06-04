@@ -6,7 +6,7 @@
 
 	<arg name="republishPC" default="true" doc="Wether or not to re-publish incoming pointcloud data"/>
 	<arg name="downsamleSL" default="false" doc="Wether to downsample the SL pointcloud" />
-	<arg name="discardSLPoints" default="1" doc="Frequency of points to keep, if downsampled (i.e 1=keep all points)" />
+	<arg name="SLPointsKeep" default="1" doc="Frequency of points to keep, if downsampled (i.e 1=keep all points)" />
 
   <arg name="liveTF" default="true" doc="Wether or not to publish tf data at clock time"/>
 
@@ -125,7 +125,7 @@
     <param name="republish_pointclouds" type="bool" value="$(arg republishPC)" />
     <param name="live_tf" type="bool" value="$(arg liveTF)" />
 		<param name="downsamle_seikowave" type="bool" value="$(arg downsamleSL)" />
-		<param name="pc_keep_num" type="int" value="$(arg discardSLPoints)" />
+		<param name="pc_keep_num" type="int" value="$(arg SLPointsKeep)" />
 		<param name="concatenate_output" type="bool" value="$(arg concatenateOutput)" />
 
 	</node>

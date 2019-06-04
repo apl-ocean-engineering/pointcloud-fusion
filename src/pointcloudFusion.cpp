@@ -30,14 +30,7 @@ void PointcloudFusion::pointcloudSyncCallback(
                 pcl::fromROSMsg(*stereo_PC, *stereoCloud);
                 pcl::fromROSMsg(*sl_PC, *SLCloud);
 
-                // pcl::CentroidPoint<PointXYZ> centroid;
-                // pcl::computeCentroid(*SLCloud, centroid);
-                // PointXYZ point;
-                // centroid.get(point);
-                //
-                // ROS_INFO("SL pointcloud centroid: %f, %f, %f", point.x, point.y, point.z);
-
-                bool pointcloudDownsample = false;
+                //Downsample PC
                 if (downsamplePC) {
                         PointCloudPointXYZ::Ptr cloudFiltered(new PointCloudPointXYZ);
 
@@ -48,12 +41,6 @@ void PointcloudFusion::pointcloudSyncCallback(
                                 PointXYZ point = SLCloud->at(i);
                                 cloudFiltered->points.push_back(point);
                         }
-                        // pcl::VoxelGrid<PointXYZ> sor;
-                        // sor.setInputCloud(SLCloud);
-                        // sor.setLeafSize(0.1f,
-                        //                 0.1f,
-                        //                 0.1f);
-                        // sor.filter(*cloudFiltered);
 
                         SLCloud = cloudFiltered;
                 }
@@ -70,6 +57,7 @@ void PointcloudFusion::pointcloudSyncCallback(
                 pcl_conversions::toPCL(ros::Time::now(), SLCloud->header.stamp);
                 SLPub.publish(*SLCloud);
 
+                //Publish concatenated output
                 if (concatenateOutput){
                   PointCloudPointXYZ XYZStereoPC;
                   pcl::copyPointCloud(*cloudTransform, XYZStereoPC);
@@ -80,8 +68,6 @@ void PointcloudFusion::pointcloudSyncCallback(
                   concatenatedPc.header.frame_id = SLFrameID;
                   pcl_conversions::toPCL(ros::Time::now(), concatenatedPc.header.stamp);
                   concatenatePub.publish(concatenatedPc);
-
-
                 }
         }
 }
@@ -195,7 +181,6 @@ int main(int argc, char **argv) {
 
         //Determine if we want to publish in live time or a camera pointcliud time
         // (publishing at live time seemed to fail with rosbag -> live data fusions)
-
         bool live_tf;
         if (nh_.getParam("live_tf", live_tf)) {
                 if (live_tf) {
@@ -211,11 +196,24 @@ int main(int argc, char **argv) {
 
         //Determine if we want to downsample the Seikowave (assuming the stereo will not ever be downsampled)
         bool downsampleSeikowave;
-        bool downsampleSeikowaveDefault = false;
         int pcKeepNum;
-        int pcKeepNumDefault = 1; //This means keep every point
-        nh_.param(nh_.resolveName("downsamle_seikowave"), downsampleSeikowave, downsampleSeikowaveDefault);
-        nh_.param(nh_.resolveName("pc_keep_num"), pcKeepNum, pcKeepNumDefault);
+        if (nh_.getParam("downsamle_seikowave", downsampleSeikowave)) {
+                if (downsampleSeikowave) {
+                        ROS_INFO("Will downsample SL pointcloud");
+                }
+                else{
+                        ROS_INFO("Will not downsample pointcloud");
+                }
+        } else {
+                ROS_INFO("Will not downsample pointcloud");
+                downsampleSeikowave = true;
+        }
+        if (nh_.getParam("pc_keep_num", pcKeepNum) && downsampleSeikowave) {
+            ROS_INFO("Pc keep num: %i", pcKeepNum);
+        } else {
+                ROS_INFO("Not downsampling, pcKeepNum set to 1");
+                pcKeepNum = 1; //This means keep every point
+        }
 
         bool concatenateOutput = false;
         if (nh_.getParam("concatenate_output", concatenateOutput)) {
@@ -233,6 +231,7 @@ int main(int argc, char **argv) {
         // Create pointcloud fusion object
         PointcloudFusion pointcloudFusion(G, stereo_frame, SL_frame, live_tf, republish_pointclouds);
 
+        //Set filtering options
         pointcloudFusion.downsamplePC = downsampleSeikowave;
         pointcloudFusion.pointKeepNum = pcKeepNum;
         pointcloudFusion.concatenateOutput = concatenateOutput;
