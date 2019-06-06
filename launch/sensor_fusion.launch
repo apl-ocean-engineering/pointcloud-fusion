@@ -10,7 +10,7 @@
 
   <arg name="liveTF" default="true" doc="Wether or not to publish tf data at clock time"/>
 
-	<arg name="concatenateOutput" default="false" doc="Wether or not to publish the concatenated output" />
+	<arg name="concatenateOutput" default="true" doc="Wether or not to publish the concatenated output" />
 
 
 	<!-- Global namespaces and frames -->
@@ -18,6 +18,7 @@
 	<arg name="rightNs" default="camera/right" doc="Right camera ROS namespace"/>
 	<arg name="stereoFrame" default="head_stereo/left_optical_frame" doc="Stereo camera frame"/>
 	<arg name="SLFrame" default="/seikowave/optical_frame" doc="SL camera frame" />
+	<arg name="SLWorldFrame" default="/seikowave/optical_frame" doc="SL work frame" />
 	<arg name="extrinsicNS" default="SL_extrinsics" doc="Namespace for stereo-SL extrinsics"/>
 
 	<!--Image topic names -->
@@ -86,7 +87,7 @@
 			<remap from="right/camera_info" to="right/$(arg cropInfoOut)" />
 
 			<!-- Tuned underwater calibration params-->
-			<!-- <param name="approximate_sync" type="bool" value="true" />
+			<param name="approximate_sync" type="bool" value="true" />
 			<param name="prefilter_size" type="int" value="107" />
 			<param name="prefilter_cap" type="int" value="63" />
 			<param name="correlation_window_size" type="int" value="13" />
@@ -95,10 +96,10 @@
 			<param name="uniqueness_ratio" type="double" value="10.0" />
 			<param name="texture_threshold" type="int" value="696" />
 			<param name="speckle_size" type="int" value="174" />
-			<param name="speckle_range" type="int" value="31" /> -->
+			<param name="speckle_range" type="int" value="31" />
 
 			<!-- SGBM underwater calibration params-->
-			<param name="approximate_sync" type="bool" value="true" />
+			<!-- <param name="approximate_sync" type="bool" value="true" />
 			<param name="prefilter_size" type="int" value="107" />
 			<param name="prefilter_cap" type="int" value="63" />
 			<param name="correlation_window_size" type="int" value="17" />
@@ -110,7 +111,7 @@
 			<param name="speckle_range" type="int" value="31" />
 			<param name="P1" type="double" value="200" />
 			<param name="P2" type="double" value="4000" />
-			<param name="stereo_algorithm" type="int" value="1" />
+			<param name="stereo_algorithm" type="int" value="1" /> -->
 		</node>
 	</group>
 
@@ -121,6 +122,7 @@
 		<remap from="SL/points2" to="/seikowave_node/cloud" />
 		<param name="stereo_frame" type="string" value="$(arg stereoFrame)" />
 		<param name="SL_frame" type="string" value="$(arg SLFrame)" />
+		<param name="SL_world_frame" type="string" value="$(arg SLWorldFrame)" />
 		<param name="extrinsics_ns" type="string" value="$(arg extrinsicNS)" />
     <param name="republish_pointclouds" type="bool" value="$(arg republishPC)" />
     <param name="live_tf" type="bool" value="$(arg liveTF)" />

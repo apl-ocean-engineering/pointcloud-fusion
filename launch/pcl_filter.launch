@@ -1,0 +1,12 @@
+<launch>
+  <node name="statistical_outlier_removal"
+        pkg="nodelet" type="nodelet"
+        args="standalone pcl/StatisticalOutlierRemoval">
+    <remap from="~input" to="seikowave_node/cloud" />
+    <rosparam>
+      mean_k: 10
+      stddev: 1.0
+    </rosparam>
+  </node>
+
+</launch>

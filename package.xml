@@ -75,6 +75,7 @@
   <exec_depend>tf</exec_depend>
   <exec_depend>tf_conversions</exec_depend>
 
+  <depend>dynamic_reconfigure</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

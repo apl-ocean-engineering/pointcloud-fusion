@@ -5,14 +5,15 @@
 	<arg name="downsamleSL" default="false" doc="Wether to downsample the SL pointcloud" />
 	<arg name="discardSLPoints" default="1" doc="Frequency of points to keep, if downsampled (i.e 1=keep all points)" />
 
-  <arg name="liveTF" default="true" doc="Wether or not to publish tf data at clock time"/>
+  <arg name="liveTF" default="false" doc="Wether or not to publish tf data at clock time"/>
 
-	<arg name="concatenateOutput" default="false" doc="Wether or not to publish the concatenated output" />
+	<arg name="concatenateOutput" default="true" doc="Wether or not to publish the concatenated output" />
 	<!-- Global namespaces and frames -->
 	<arg name="leftNs" default="camera/left" doc="Left camera ROS namespace"/>
 	<arg name="rightNs" default="camera/right" doc="Right camera ROS namespace"/>
 	<arg name="stereoFrame" default="head_stereo/left_optical_frame" doc="Stereo camera frame"/>
 	<arg name="SLFrame" default="/seikowave/optical_frame" doc="SL camera frame" />
+  <arg name="SLWorldFrame" default="/seikowave_link" doc="SL work frame" />
 	<arg name="extrinsicNS" default="SL_extrinsics" doc="Namespace for stereo-SL extrinsics"/>
 
 
@@ -28,6 +29,7 @@
 		<remap from="SL/points2" to="/seikowave_node/cloud" />
 		<param name="stereo_frame" type="string" value="$(arg stereoFrame)" />
 		<param name="SL_frame" type="string" value="$(arg SLFrame)" />
+    <param name="SL_world_frame" type="string" value="$(arg SLWorldFrame)" />
 		<param name="extrinsics_ns" type="string" value="$(arg extrinsicNS)" />
     <param name="republish_pointclouds" type="bool" value="$(arg republishPC)" />
     <param name="live_tf" type="bool" value="$(arg liveTF)" />

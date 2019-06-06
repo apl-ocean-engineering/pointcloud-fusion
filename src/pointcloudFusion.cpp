@@ -65,8 +65,13 @@ void PointcloudFusion::pointcloudSyncCallback(
                   concatenatedPc = XYZStereoPC;
                   concatenatedPc += *SLCloud;
 
-                  concatenatedPc.header.frame_id = SLFrameID;
-                  pcl_conversions::toPCL(ros::Time::now(), concatenatedPc.header.stamp);
+                  concatenatedPc.header.frame_id = SLWorldFrame;
+                  if (liveTF) {
+                    pcl_conversions::toPCL(ros::Time::now(), concatenatedPc.header.stamp);
+                  }
+                  else{
+                    pcl_conversions::toPCL(sl_PC->header.stamp, concatenatedPc.header.stamp);
+                  }
                   concatenatePub.publish(concatenatedPc);
                 }
         }
@@ -76,22 +81,22 @@ void PointcloudFusion::tf_pub() {
         ros::Rate loop_rate(30);
         while (ros::ok()) {
                 // Convert from Eigen matrix to tf
-                Eigen::Quaterniond quaternion(G.block<3, 3>(0, 0).cast<double>());
-                tf::Transform transform;
-                transform.setOrigin(tf::Vector3(G(0, 3), G(1, 3), G(2, 3)));
-                tf::Quaternion q;
-                tf::quaternionEigenToTF(quaternion, q);
-                transform.setRotation(q);
-
-                // Publish tf transform
-                if (liveTF) {
-                        TB.sendTransform(tf::StampedTransform(transform.inverse(), ros::Time::now(),
-                                                              stereoFrameID, SLFrameID));
-                }
-                else{
-                        TB.sendTransform(tf::StampedTransform(transform.inverse(), cameraPCTime,
-                                                              stereoFrameID, SLFrameID));
-                }
+                // Eigen::Quaterniond quaternion(G.block<3, 3>(0, 0).cast<double>());
+                // tf::Transform transform;
+                // transform.setOrigin(tf::Vector3(G(0, 3), G(1, 3), G(2, 3)));
+                // tf::Quaternion q;
+                // tf::quaternionEigenToTF(quaternion, q);
+                // transform.setRotation(q);
+                //
+                // // Publish tf transform
+                // if (liveTF) {
+                //         TB.sendTransform(tf::StampedTransform(transform.inverse(), ros::Time::now(),
+                //                                               stereoFrameID, SLFrameID));
+                // }
+                // else{
+                //         TB.sendTransform(tf::StampedTransform(transform.inverse(), cameraPCTime,
+                //                                               stereoFrameID, SLFrameID));
+                // }
 
                 // Get ROS info from callbacks
                 ros::spinOnce();
@@ -150,7 +155,7 @@ int main(int argc, char **argv) {
         // Set default topic names
         std::string stereo_topic = ros::names::resolve("stereo/points2");
         std::string SL_topic = ros::names::resolve("SL/points2");
-        std::string stereo_frame, SL_frame;
+        std::string stereo_frame, SL_frame, SL_world_frame;
 
         // Get stereo frame (e.g., camera_left)
         if (nh_.getParam("stereo_frame", stereo_frame)) {
@@ -168,6 +173,14 @@ int main(int argc, char **argv) {
                 ROS_WARN("No SL frame specified, setting SL_frame output frame to "
                          "SL/optical_frame");
                 SL_frame = "SL/optical_frame";
+        }
+
+        if (nh_.getParam("SL_world_frame", SL_world_frame)) {
+                ROS_INFO("Setting frame %s as SL output world frame", SL_world_frame.c_str());
+        } else {
+                ROS_WARN("No SL frame specified, setting SL_frame output frame to "
+                         "SL_link");
+                SL_world_frame = "SL_world_frame";
         }
 
         bool republish_pointclouds;
@@ -236,6 +249,9 @@ int main(int argc, char **argv) {
         pointcloudFusion.pointKeepNum = pcKeepNum;
         pointcloudFusion.concatenateOutput = concatenateOutput;
 
+        pointcloudFusion.SLWorldFrame = SL_world_frame;
+
+
         // Approx sync incoming pointcloud topics
         message_filters::Subscriber<sensor_msgs::PointCloud2> stereo_sub(
                 nh_, stereo_topic, 1);
@@ -246,6 +262,13 @@ int main(int argc, char **argv) {
         sync.registerCallback(boost::bind(&PointcloudFusion::pointcloudSyncCallback,
                                           &pointcloudFusion, _1, _2));
 
+
+
+        dynamic_reconfigure::Server<sensor_fusion::fusionConfig> server;
+        dynamic_reconfigure::Server<sensor_fusion::fusionConfig>::CallbackType f;
+
+        f = boost::bind(&PointcloudFusion::dynamicReconfigureCallback, &pointcloudFusion, _1, _2);
+        server.setCallback(f);
 
         // Main ROS loop. Publish tf
         pointcloudFusion.tf_pub();

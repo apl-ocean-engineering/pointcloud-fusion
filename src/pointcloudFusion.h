@@ -24,6 +24,9 @@
 
 #include <tf/transform_broadcaster.h>
 
+#include <dynamic_reconfigure/server.h>
+#include <sensor_fusion/fusionConfig.h>
+
 typedef pcl::PointXYZRGB PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
 
@@ -70,6 +73,15 @@ public:
   // Main tf publisher
   void tf_pub();
 
+  void dynamicReconfigureCallback(sensor_fusion::fusionConfig &config,
+                                  uint32_t level) {
+
+    downsamplePC = config.downsamle_seikowave;
+    pointKeepNum = config.pc_keep_num;
+    concatenateOutput = config.concatenate_output;
+    republishPC = config.republish_pointclouds;
+  }
+
 
   //Live fusion param helpers
   ros::Time cameraPCTime;
@@ -82,4 +94,6 @@ public:
 
   //Concatenate params
   bool concatenateOutput;
+
+  std::string SLWorldFrame;
 };
