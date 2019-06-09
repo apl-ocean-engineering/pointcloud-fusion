@@ -40,9 +40,9 @@ typedef message_filters::sync_policies::ApproximateTime<
 
 class PointcloudFusion {
   // Inital pointcloud pointers
-  PointCloudT::Ptr stereoCloud;
+  PointCloudT::Ptr stereoCloud, stereoCloudSeperate;
   PointCloudPointXYZ::Ptr SLCloud;
-  PointCloudT::Ptr cloudTransform;
+  PointCloudT::Ptr cloudTransform, cloudTransformSeperate;
 
   // Sensor frame names
   std::string stereoFrameID;
@@ -53,6 +53,8 @@ class PointcloudFusion {
 
   // ROS node handeler
   ros::NodeHandle nh_;
+
+  bool recieveSeikowave;
 
   // ROS publishers and transform broadcaster
   std::string steroTopic = "fusion/stereo/cloud";
@@ -74,6 +76,7 @@ public:
   // Pointcliud callback
   void pointcloudSyncCallback(const sensor_msgs::PointCloud2ConstPtr &stereo_PC,
                               const sensor_msgs::PointCloud2ConstPtr &sl_PC);
+  void stereoCallback(const sensor_msgs::PointCloud2ConstPtr &stereo_PC);
   // Main tf publisher
   void tf_pub();
 

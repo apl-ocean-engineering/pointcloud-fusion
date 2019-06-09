@@ -49,3 +49,13 @@ add_dependencies(pointcloud_fusion ${PROJECT_NAME}_gencfg)
 
 add_executable(pointcloud_icp src/pointcloudIcp.cpp)
 target_link_libraries(pointcloud_icp ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
+install(TARGETS
+        pointcloud_icp
+        pointcloud_fusion
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+install(DIRECTORY launch cfg
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})

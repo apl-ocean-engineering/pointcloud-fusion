@@ -8,10 +8,10 @@
 PointcloudFusion::PointcloudFusion(Eigen::Matrix4f _G,
                                    std::string _stereoFrameID,
                                    std::string _SLFrameID, bool live_time_TF, bool republish_pointclouds)
-        : stereoCloud(new PointCloudT), SLCloud(new PointCloudPointXYZ),
-        cloudTransform(new PointCloudT), G(_G), stereoFrameID(_stereoFrameID),
+        : stereoCloud(new PointCloudT), stereoCloudSeperate(new PointCloudT), SLCloud(new PointCloudPointXYZ),
+        cloudTransform(new PointCloudT), cloudTransformSeperate(new PointCloudT), G(_G), stereoFrameID(_stereoFrameID),
         SLFrameID(_SLFrameID), liveTF(live_time_TF), republishPC(republish_pointclouds), _x(0),
-        _y(0), _z(0) {
+        _y(0), _z(0), recieveSeikowave(false) {
         cameraPCTime = ros::Time::now();
         downsamplePC = false;
         pointKeepNum = 1;
@@ -24,6 +24,9 @@ PointcloudFusion::~PointcloudFusion() {
 void PointcloudFusion::pointcloudSyncCallback(
         const sensor_msgs::PointCloud2ConstPtr &stereo_PC,
         const sensor_msgs::PointCloud2ConstPtr &sl_PC) {
+
+
+        recieveSeikowave = true;
 
         cameraPCTime = stereo_PC->header.stamp;
         if (republishPC) {
@@ -82,8 +85,31 @@ void PointcloudFusion::pointcloudSyncCallback(
                     pcl_conversions::toPCL(sl_PC->header.stamp, concatenatedPc.header.stamp);
                   }
                   concatenatePub.publish(concatenatedPc);
+                  //recieveSeikowave = false;
                 }
         }
+}
+
+void PointcloudFusion::stereoCallback(const sensor_msgs::PointCloud2ConstPtr &stereo_PC){
+    pcl::fromROSMsg(*stereo_PC, *stereoCloudSeperate);
+    pcl::transformPointCloud(*stereoCloudSeperate, *cloudTransformSeperate, G);
+    PointCloudPointXYZ XYZStereoPC;
+    pcl::copyPointCloud(*cloudTransformSeperate, XYZStereoPC);
+    PointCloudPointXYZ concatenatedPc;
+    concatenatedPc = XYZStereoPC;
+    concatenatedPc.header.frame_id = SLWorldFrame;
+    if (liveTF) {
+      pcl_conversions::toPCL(ros::Time::now(), concatenatedPc.header.stamp);
+    }
+    else{
+      pcl_conversions::toPCL(stereo_PC->header.stamp, concatenatedPc.header.stamp);
+    }
+    if (!recieveSeikowave){
+      concatenatePub.publish(concatenatedPc);
+    }
+    else{
+      recieveSeikowave = false;
+    }
 }
 
 void PointcloudFusion::tf_pub() {
@@ -108,6 +134,8 @@ void PointcloudFusion::tf_pub() {
                 // }
                 //
                 // // Get ROS info from callbacks
+
+
                 ros::spinOnce();
                 loop_rate.sleep();
         }
@@ -272,7 +300,10 @@ int main(int argc, char **argv) {
         sync.registerCallback(boost::bind(&PointcloudFusion::pointcloudSyncCallback,
                                           &pointcloudFusion, _1, _2));
 
-
+        ros::Subscriber stereoStandalone =
+            nh_.subscribe<sensor_msgs::PointCloud2>(
+                stereo_topic, 1, &PointcloudFusion::stereoCallback,
+                &pointcloudFusion);
 
         dynamic_reconfigure::Server<sensor_fusion::fusionConfig> server;
         dynamic_reconfigure::Server<sensor_fusion::fusionConfig>::CallbackType f;
