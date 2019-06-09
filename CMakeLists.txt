@@ -46,3 +46,6 @@ include_directories(
 add_executable(pointcloud_fusion src/pointcloudFusion.cpp)
 target_link_libraries(pointcloud_fusion ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(pointcloud_fusion ${PROJECT_NAME}_gencfg)
+
+add_executable(pointcloud_icp src/pointcloudIcp.cpp)
+target_link_libraries(pointcloud_icp ${catkin_LIBRARIES} ${PCL_LIBRARIES})

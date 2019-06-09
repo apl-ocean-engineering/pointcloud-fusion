@@ -38,72 +38,32 @@ typedef message_filters::sync_policies::ApproximateTime<
     sensor_msgs::PointCloud2, sensor_msgs::PointCloud2>
     SyncPolicy;
 
-class PointcloudFusion {
+class PointcloudIcp {
   // Inital pointcloud pointers
   PointCloudT::Ptr stereoCloud;
   PointCloudPointXYZ::Ptr SLCloud;
   PointCloudT::Ptr cloudTransform;
 
-  // Sensor frame names
-  std::string stereoFrameID;
-  std::string SLFrameID;
+  // ROS node handeler
+  ros::NodeHandle nh_;
 
   // Transformation between frames
   Eigen::Matrix4f G;
 
-  // ROS node handeler
-  ros::NodeHandle nh_;
-
   // ROS publishers and transform broadcaster
   std::string steroTopic = "fusion/stereo/cloud";
-  ros::Publisher stereoPub = nh_.advertise<PointCloudT>(steroTopic, 1);
+  //ros::Publisher stereoPub = nh_.advertise<PointCloudT>(steroTopic, 1);
   std::string SLTopic = "fusion/SL/cloud";
-  ros::Publisher SLPub = nh_.advertise<PointCloudT>(SLTopic, 1);
+  //ros::Publisher SLPub = nh_.advertise<PointCloudT>(SLTopic, 1);
   std::string concatenateTopic = "fusion/concatenated_cloud";
-  ros::Publisher concatenatePub = nh_.advertise<PointCloudT>(concatenateTopic, 1);
-  tf::TransformBroadcaster TB;
+  //ros::Publisher concatenatePub = nh_.advertise<PointCloudT>(concatenateTopic, 1);
 
-  float _x;
-  float _y;
-  float _z;
 public:
   // Constructor/destructor
-  PointcloudFusion(Eigen::Matrix4f _G, std::string _stereoFrameID,
-                   std::string _SLFrameID, bool live_time_TF, bool republish_pointclouds);
-  ~PointcloudFusion();
+  PointcloudIcp(Eigen::Matrix4f _G);
+  ~PointcloudIcp();
   // Pointcliud callback
   void pointcloudSyncCallback(const sensor_msgs::PointCloud2ConstPtr &stereo_PC,
                               const sensor_msgs::PointCloud2ConstPtr &sl_PC);
-  // Main tf publisher
-  void tf_pub();
 
-  void dynamicReconfigureCallback(sensor_fusion::fusionConfig &config,
-                                  uint32_t level) {
-
-    downsamplePC = config.downsamle_seikowave;
-    pointKeepNum = config.pc_keep_num;
-    concatenateOutput = config.concatenate_output;
-    republishPC = config.republish_pointclouds;
-
-    _x = config.x_motion;
-    _y = config.y_motion;
-    _z = config.z_motion;
-
-    //std::cout << _x << std::endl;
-  }
-
-
-  //Live fusion param helpers
-  ros::Time cameraPCTime;
-  bool liveTF;
-  bool republishPC;
-
-  //Downsample params
-  bool downsamplePC;
-  int pointKeepNum;
-
-  //Concatenate params
-  bool concatenateOutput;
-
-  std::string SLWorldFrame;
 };

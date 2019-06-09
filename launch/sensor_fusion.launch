@@ -32,7 +32,7 @@
 
 	<!-- Calibration files -->
 	<arg name="seikowaveExtrinsics" default="$(find sensor_fusion)/cfg/extrinsics/stereo_Seikowave_extrinsics.yaml" />
-
+	<!-- <arg name="seikowaveExtrinsics" default="$(find sensor_fusion)/cfg/extrinsics/nbl_calibration/3.yaml" /> -->
 	<!-- Load ROS param calibration files -->
 	<rosparam command="load" file="$(arg seikowaveExtrinsics)" ns="$(arg extrinsicNS)"/>
 

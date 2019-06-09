@@ -10,7 +10,8 @@ PointcloudFusion::PointcloudFusion(Eigen::Matrix4f _G,
                                    std::string _SLFrameID, bool live_time_TF, bool republish_pointclouds)
         : stereoCloud(new PointCloudT), SLCloud(new PointCloudPointXYZ),
         cloudTransform(new PointCloudT), G(_G), stereoFrameID(_stereoFrameID),
-        SLFrameID(_SLFrameID), liveTF(live_time_TF), republishPC(republish_pointclouds) {
+        SLFrameID(_SLFrameID), liveTF(live_time_TF), republishPC(republish_pointclouds), _x(0),
+        _y(0), _z(0) {
         cameraPCTime = ros::Time::now();
         downsamplePC = false;
         pointKeepNum = 1;
@@ -45,6 +46,14 @@ void PointcloudFusion::pointcloudSyncCallback(
                         SLCloud = cloudFiltered;
                 }
                 // Transform stereo cloud to seikowave frame
+                Eigen::Matrix4f _G = Eigen::Matrix4f::Identity();
+                //
+                _G(0, 3) = _x;
+                _G(1, 3) = _y;
+                _G(2, 3) = _z;
+                //_G = _G*G;
+                //std::cout << G << std::endl;
+
                 pcl::transformPointCloud(*stereoCloud, *cloudTransform, G);
 
                 // Publish stereo cloud
@@ -97,8 +106,8 @@ void PointcloudFusion::tf_pub() {
                 //         TB.sendTransform(tf::StampedTransform(transform.inverse(), cameraPCTime,
                 //                                               stereoFrameID, SLFrameID));
                 // }
-
-                // Get ROS info from callbacks
+                //
+                // // Get ROS info from callbacks
                 ros::spinOnce();
                 loop_rate.sleep();
         }
@@ -135,6 +144,7 @@ void loadExtrinsics(ros::NodeHandle nh_, Eigen::Matrix4f &G) {
         // Set Se3 transformation
         G.block<3, 3>(0, 0) = R.cast<float>();
         G.block<3, 1>(0, 3) = T.cast<float>();
+        G(3,3) = 1.0;
 }
 
 int main(int argc, char **argv) {
