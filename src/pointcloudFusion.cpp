@@ -126,11 +126,11 @@ void PointcloudFusion::tf_pub() {
                 // // Publish tf transform
                 // if (liveTF) {
                 //         TB.sendTransform(tf::StampedTransform(transform.inverse(), ros::Time::now(),
-                //                                               stereoFrameID, SLFrameID));
+                //                                               stereoFrameID, SLWorldFrame));
                 // }
                 // else{
                 //         TB.sendTransform(tf::StampedTransform(transform.inverse(), cameraPCTime,
-                //                                               stereoFrameID, SLFrameID));
+                //                                               stereoFrameID, SLWorldFrame));
                 // }
                 //
                 // // Get ROS info from callbacks
