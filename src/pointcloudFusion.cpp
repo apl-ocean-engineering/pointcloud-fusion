@@ -116,25 +116,26 @@ void PointcloudFusion::tf_pub() {
         ros::Rate loop_rate(30);
         while (ros::ok()) {
                 // Convert from Eigen matrix to tf
-                // Eigen::Quaterniond quaternion(G.block<3, 3>(0, 0).cast<double>());
-                // tf::Transform transform;
-                // transform.setOrigin(tf::Vector3(G(0, 3), G(1, 3), G(2, 3)));
-                // tf::Quaternion q;
-                // tf::quaternionEigenToTF(quaternion, q);
-                // transform.setRotation(q);
-                //
-                // // Publish tf transform
-                // if (liveTF) {
-                //         TB.sendTransform(tf::StampedTransform(transform.inverse(), ros::Time::now(),
-                //                                               stereoFrameID, SLWorldFrame));
-                // }
-                // else{
-                //         TB.sendTransform(tf::StampedTransform(transform.inverse(), cameraPCTime,
-                //                                               stereoFrameID, SLWorldFrame));
-                // }
-                //
-                // // Get ROS info from callbacks
+                Eigen::Quaterniond quaternion(
+                    G.block<3, 3>(0, 0).cast<double>());
+                tf::Transform transform;
+                transform.setOrigin(tf::Vector3(G(0, 3), G(1, 3), G(2, 3)));
+                tf::Quaternion q;
+                tf::quaternionEigenToTF(quaternion, q);
+                transform.setRotation(q);
 
+                // Publish tf transform
+                if (liveTF) {
+                  TB.sendTransform(tf::StampedTransform(
+                      transform.inverse(), ros::Time::now(), stereoFrameID,
+                      SLWorldFrame));
+                } else {
+                  TB.sendTransform(
+                      tf::StampedTransform(transform.inverse(), cameraPCTime,
+                                           stereoFrameID, SLWorldFrame));
+                }
+
+                // Get ROS info from callbacks
 
                 ros::spinOnce();
                 loop_rate.sleep();
